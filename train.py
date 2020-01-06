@@ -39,7 +39,7 @@ def train(args):
 
 	def test_step():
 		z = tf.random.normal([args.batch_size, args.noise_dim])
-		fake_sample = generator(z, test_mode = True)
+		fake_sample = generator(z, test = True)
 		return fake_sample
 
 	plot(test_step(), 'samples', 0)
