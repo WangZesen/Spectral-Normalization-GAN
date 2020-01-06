@@ -1,4 +1,5 @@
 import tensorflow as tf
+from functools import partial
 
 class SNConv2DTranspose(tf.keras.layers.Layer):
 	def __init__(self, outfilter, 
@@ -84,14 +85,14 @@ class SNConv2D(tf.keras.layers.Layer):
 										initializer = tf.zeros)
 		self.u = self.add_variable("u",
 									shape = [self.outfilter, 1],
-									initializer = tf.random.normal,
+									initializer = tf.keras.initializers.GlorotNormal,
 									trainable = False)
 	def call(self, x, test = False):
 		def _power_iteration(w):
 			_v = tf.matmul(tf.transpose(w), self.u)
-			v = _v / tf.math.l2_normalize(_v)
+			v = _v / tf.math.l2_normalize(_v, axis = 1)
 			_u = tf.matmul(w, v)
-			self.u.assign(_u / tf.math.l2_normalize(_u))
+			self.u.assign(_u / tf.math.l2_normalize(_u, axis = 0))
 			w = w / (tf.matmul(tf.matmul(tf.transpose(self.u), w), v))
 			return w
 
@@ -118,7 +119,7 @@ class SNDense(tf.keras.layers.Layer):
 	def build(self, input_shape):
 		self.kernel = self.add_variable("kernel", 
 										shape = [int(input_shape[-1]), self.outfilter],
-										initializer = tf.keras.initializers.GlorotUniform)
+										initializer = tf.keras.initializers.Orthogonal)
 		self.bias = self.add_variable("bias", 
 										shape = [1, self.outfilter],
 										initializer = tf.zeros)
@@ -129,9 +130,9 @@ class SNDense(tf.keras.layers.Layer):
 	def call(self, x, test = False):
 		def _power_iteration(w):
 			_v = tf.matmul(tf.transpose(w), self.u)
-			v = _v / tf.math.l2_normalize(_v)
+			v = tf.math.l2_normalize(_v)
 			_u = tf.matmul(w, v)
-			self.u.assign(_u / tf.math.l2_normalize(_u))
+			self.u.assign(tf.math.l2_normalize(_u))
 			w = w / (tf.matmul(tf.matmul(tf.transpose(self.u), w), v))
 			return w
 
