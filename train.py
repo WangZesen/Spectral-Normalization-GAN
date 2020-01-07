@@ -20,9 +20,14 @@ def train(args):
 
 		with tf.GradientTape(persistent = True) as tape:
 			tape.watch(generator.trainable_variables + discriminator.trainable_variables)
-			fake_sample = generator(z)
-			fake_logit = discriminator(fake_sample)
-			real_logit = discriminator(real_sample)
+			fake_sample = generator(z, test = True)
+
+			all_samples = tf.concat([fake_sample, real_sample], axis = 0)
+			all_logit = discriminator(all_samples)
+			fake_logit, real_logit = tf.split(all_logit, 2, 0)
+
+			# fake_logit = discriminator(fake_sample, test = True)
+			# real_logit = discriminator(real_sample, test = True)
 
 			dis_loss = tf.reduce_mean(tf.maximum(1 - real_logit, 0)) + tf.reduce_mean(tf.maximum(1 + fake_logit, 0))
 			gen_loss = - tf.reduce_mean(fake_logit)

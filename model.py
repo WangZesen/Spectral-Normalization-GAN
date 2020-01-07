@@ -20,13 +20,13 @@ class SNConv2DTranspose(tf.keras.layers.Layer):
 	def build(self, input_shape):
 		self.kernel = self.add_variable("kernel",
 										shape = self.kernel + [self.outfilter, int(input_shape[-1])],
-										initializer = tf.keras.initializers.GlorotUniform)
+										initializer = tf.keras.initializers.Orthogonal)
 		self.bias = self.add_variable("bias",
 										shape = [1, self.outfilter],
 										initializer = tf.zeros)
 		self.u = self.add_variable("u",
 									shape = [self.outfilter, 1],
-									initializer = tf.random.normal,
+									initializer = tf.random.normal, # tf.keras.initializers.GlorotNormal,
 									trainable = False)
 
 		self._output_shape = input_shape.as_list()
@@ -36,24 +36,29 @@ class SNConv2DTranspose(tf.keras.layers.Layer):
 		print (self._output_shape)
 
 	def call(self, x, test = False):
-		def _power_iteration(w):
+		def _power_iteration(w, test = False):
 			_v = tf.matmul(tf.transpose(w), self.u)
-			v = _v / tf.math.l2_normalize(_v)
+			v = tf.math.l2_normalize(_v, axis = 0)
 			_u = tf.matmul(w, v)
-			self.u.assign(_u / tf.math.l2_normalize(_u))
-			w = w / (tf.matmul(tf.matmul(tf.transpose(self.u), w), v))
+			u = tf.math.l2_normalize(_u, axis = 0)
+			if not test:
+				self.u.assign(u)
+
+			v = tf.stop_gradient(v)
+			u = tf.stop_gradient(u)
+			w = w / (tf.matmul(tf.matmul(tf.transpose(u), w), v))
 			return w
 
-		if not test:
-			_kernel = tf.transpose(self.kernel, perm = [0, 1, 3, 2])
-			w = tf.transpose(tf.reshape(_kernel, [-1, self.outfilter]))
-			w = tf.transpose(_power_iteration(w))
-			dims = self.kernel.get_shape().as_list()
-			_kernel = tf.reshape(w, [dims[0], dims[1], dims[3], dims[2]])
-			self.kernel.assign(tf.transpose(_kernel, perm = [0, 1, 3, 2]))
+	
+		_kernel = tf.transpose(self.kernel, perm = [0, 1, 3, 2])
+		w = tf.transpose(tf.reshape(_kernel, [-1, self.outfilter]))
+		w = tf.transpose(_power_iteration(w, test = test))
+		dims = self.kernel.get_shape().as_list()
+		_kernel = tf.reshape(w, [dims[0], dims[1], dims[3], dims[2]])
+		_kernel = tf.transpose(_kernel, perm = [0, 1, 3, 2])
 
 		self._output_shape[0] = x.get_shape().as_list()[0]
-		x = tf.nn.conv2d_transpose(x, self.kernel, self._output_shape, self.stride, self.padding)
+		x = tf.nn.conv2d_transpose(x, _kernel, self._output_shape, self.stride, self.padding)
 		x = x + self.bias
 		if callable(self.activation):
 			x = self.activation(x)
@@ -79,29 +84,33 @@ class SNConv2D(tf.keras.layers.Layer):
 	def build(self, input_shape):
 		self.kernel = self.add_variable("kernel", 
 										shape = self.kernel + [int(input_shape[-1]), self.outfilter],
-										initializer = tf.keras.initializers.GlorotUniform)
+										initializer = tf.keras.initializers.Orthogonal)
 		self.bias = self.add_variable("bias", 
 										shape = [1, self.outfilter],
 										initializer = tf.zeros)
 		self.u = self.add_variable("u",
 									shape = [self.outfilter, 1],
-									initializer = tf.keras.initializers.GlorotNormal,
+									initializer = tf.random.normal, # tf.keras.initializers.GlorotNormal,
 									trainable = False)
 	def call(self, x, test = False):
-		def _power_iteration(w):
+		def _power_iteration(w, test = False):
 			_v = tf.matmul(tf.transpose(w), self.u)
-			v = _v / tf.math.l2_normalize(_v, axis = 1)
+			v = tf.math.l2_normalize(_v, axis = 0)
 			_u = tf.matmul(w, v)
-			self.u.assign(_u / tf.math.l2_normalize(_u, axis = 0))
-			w = w / (tf.matmul(tf.matmul(tf.transpose(self.u), w), v))
+			u = tf.math.l2_normalize(_u, axis = 0)
+			if not test:
+				self.u.assign(u)
+
+			v = tf.stop_gradient(v)
+			u = tf.stop_gradient(u)
+			w = w / (tf.matmul(tf.matmul(tf.transpose(u), w), v))
 			return w
 
-		if not test:
-			w = tf.transpose(tf.reshape(self.kernel, [-1, self.outfilter]))
-			w = tf.transpose(_power_iteration(w))
-			self.kernel.assign(tf.reshape(w, self.kernel.get_shape().as_list()))
+		w = tf.transpose(tf.reshape(self.kernel, [-1, self.outfilter]))
+		w = tf.transpose(_power_iteration(w, test = test))
+		w = tf.reshape(w, self.kernel.get_shape().as_list())
 
-		x = tf.nn.conv2d(x, self.kernel, self.stride, self.padding)
+		x = tf.nn.conv2d(x, w, self.stride, self.padding)
 		x = x + self.bias
 		if callable(self.activation):
 			x = self.activation(x)
@@ -125,23 +134,26 @@ class SNDense(tf.keras.layers.Layer):
 										initializer = tf.zeros)
 		self.u = self.add_variable("u",
 									shape = [self.outfilter, 1],
-									initializer = tf.random.normal,
+									initializer = tf.random.normal, # tf.keras.initializers.GlorotNormal,
 									trainable = False)
 	def call(self, x, test = False):
-		def _power_iteration(w):
+		def _power_iteration(w, test = False):
 			_v = tf.matmul(tf.transpose(w), self.u)
-			v = tf.math.l2_normalize(_v)
+			v = tf.math.l2_normalize(_v, axis = 0)
 			_u = tf.matmul(w, v)
-			self.u.assign(tf.math.l2_normalize(_u))
-			w = w / (tf.matmul(tf.matmul(tf.transpose(self.u), w), v))
+			u = tf.math.l2_normalize(_u, axis = 0)
+			if not test:
+				self.u.assign(u)
+
+			v = tf.stop_gradient(v)
+			u = tf.stop_gradient(u)
+			w = w / (tf.matmul(tf.matmul(tf.transpose(u), w), v))
 			return w
 
-		if not test:
-			w = tf.transpose(self.kernel)
-			w = tf.transpose(_power_iteration(w))
-			self.kernel.assign(w)
+		w = tf.transpose(self.kernel)
+		w = tf.transpose(_power_iteration(w, test = test))
 
-		x = tf.matmul(x, self.kernel) + self.bias
+		x = tf.matmul(x, w) + self.bias
 		if callable(self.activation):
 			x = self.activation(x)
 
