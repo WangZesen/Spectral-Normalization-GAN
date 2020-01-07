@@ -8,8 +8,8 @@ def train(args):
 	generator = Generator()
 	discriminator = Discriminator()
 
-	gen_opt = tf.keras.optimizers.Adam(args.learning_rate)
-	dis_opt = tf.keras.optimizers.Adam(args.learning_rate * 2)
+	gen_opt = tf.keras.optimizers.Adam(args.learning_rate, beta_1 = 0.5)
+	dis_opt = tf.keras.optimizers.Adam(args.learning_rate * 2, beta_1 = 0.5)
 
 	gen_metric = tf.keras.metrics.Mean(name = 'Generator_Loss')
 	dis_metric = tf.keras.metrics.Mean(name = 'Discriminator_Loss')

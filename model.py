@@ -33,7 +33,6 @@ class SNConv2DTranspose(tf.keras.layers.Layer):
 		self._output_shape[1] *= self.stride
 		self._output_shape[2] *= self.stride
 		self._output_shape[3] = self.outfilter
-		print (self._output_shape)
 
 	def call(self, x, test = False):
 		def _power_iteration(w, test = False):
