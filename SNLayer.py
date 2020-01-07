@@ -1,6 +1,6 @@
 import tensorflow as tf
 class SNConv2DTranspose(tf.keras.layers.Layer):
-	def __init__(self
+	def __init__(self,
 			filters, 
 			kernel_size, 
 			stride = (1, 1),
@@ -8,6 +8,7 @@ class SNConv2DTranspose(tf.keras.layers.Layer):
 			output_padding = None,
 			data_format = 'NHWC',
 			dilation_rate = (1, 1),
+			activation = None,
 			use_bias = True,
 			kernel_initializer = tf.keras.initializers.Orthogonal,
 			bias_initializer = tf.zeros,
@@ -17,9 +18,11 @@ class SNConv2DTranspose(tf.keras.layers.Layer):
 		self.kernel_size = kernel_size
 		self.stride = stride
 		self.padding = padding.upper()
+		assert self.padding in ['SAME', 'VALID']
 		self.output_padding = output_padding
 		self.data_format = data_format
 		self.dilation_rate = dilation_rate
+		self.activation = activation
 		self.use_bias = use_bias
 		self.kernel_initializer = kernel_initializer
 		self.bias_initializer = bias_initializer
@@ -86,7 +89,6 @@ class SNConv2D(tf.keras.layers.Layer):
 			use_bias = True,
 			kernel_initializer = tf.keras.initializers.Orthogonal,
 			bias_initializer = tf.zeros,
-			activation = None,
 			**kwargs
 			):
 		super(SNConv2D, self).__init__(**kwargs)
@@ -95,7 +97,7 @@ class SNConv2D(tf.keras.layers.Layer):
 		self.kernel_size = kernel_size
 		self.stride = stride
 		self.padding = padding.upper()
-		assert padding in ['SAME', 'VALID']
+		assert self.padding in ['SAME', 'VALID']
 		self.data_format = data_format
 		self.dilation_rate = dilation_rate
 		self.activation = activation
@@ -162,6 +164,7 @@ class SNDense(tf.keras.layers.Layer):
 		super(SNDense, self).__init__(**kwargs)
 		self.units = units
 		self.activation = activation
+		self.use_bias = use_bias
 		self.kernel_initializer = kernel_initializer
 		self.bias_initializer = bias_initializer
 		

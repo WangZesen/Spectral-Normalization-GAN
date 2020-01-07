@@ -45,13 +45,15 @@ def train(args):
 		return fake_sample
 
 	plot(test_step(), 'samples', 0)
-	for i in range(50):
+	for i in range(400):
 
 		for batch in dataset:
 			train_one_step(batch)
 
 		print (f'Epoch {i + 1}, Gen Loss: {gen_metric.result()}, Dis Loss: {dis_metric.result()}')
-		plot(test_step(), 'samples', i + 1)
+		
+		if (i + 1) % 2 == 0:
+			plot(test_step(), 'samples', i + 1)
 
 
 
