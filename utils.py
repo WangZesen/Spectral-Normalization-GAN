@@ -17,7 +17,7 @@ def get_dataset(args):
 	return train_ds
 
 def plot(images, save_dir, step):
-    target_dir = os.path.join(save_dir, str(step))
+    target_dir = os.path.join(save_dir, str(step).zfill(3))
     n = 8
     pad = 2
     width = images[0].shape[0]
