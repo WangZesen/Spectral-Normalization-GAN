@@ -1,4 +1,6 @@
 import tensorflow as tf
+from functools import partial
+
 class SNConv2DTranspose(tf.keras.layers.Layer):
 	def __init__(self,
 			filters, 
@@ -283,9 +285,7 @@ class SNDense(tf.keras.layers.Layer):
 
 class SN(tf.keras.layers.Wrapper):
 	def __init__(self, layer, **kwargs):
-		super(SN, self).__init__(layer, 
-			kernel_initializer = tf.keras.initializers.Orthogonal,
-			**kwargs)
+		super(SN, self).__init__(layer, **kwargs)
 		self.layer = layer
 
 	def build(self, input_shape):
@@ -312,7 +312,7 @@ class SN(tf.keras.layers.Wrapper):
 
 			v = tf.stop_gradient(v)
 			u = tf.stop_gradient(u)
-			w = w / (tf.matmul(tf.matmul(v, w), tf.transpose(u)))
+			w = w / (tf.matmul(tf.matmul(tf.transpose(v), w), u))
 			return w
 
 		w = tf.reshape(self.w, [-1, self.w_shape[-1]])

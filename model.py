@@ -5,9 +5,9 @@ class Discriminator(tf.keras.Model):
 	def __init__(self):
 		super(Discriminator, self).__init__()
 		# self.conv1 = SNConv2D(64, 7, 2, activation = tf.nn.leaky_relu, name = 'dis_conv1')
-		self.conv1 = SN(tf.keras.layers.Conv2D(64, 7, 2, activation = tf.nn.leaky_relu, name = 'dis_conv1'))
+		self.conv1 = SN(tf.keras.layers.Conv2D(64, 7, 2, activation = tf.nn.leaky_relu, name = 'dis_conv1', kernel_initializer = tf.keras.initializers.Orthogonal))
 		# self.conv2 = SNConv2D(128, 7, 2, activation = tf.nn.leaky_relu, name = 'dis_conv2')
-		self.conv2 = SN(tf.keras.layers.Conv2D(128, 7, 2, activation = tf.nn.leaky_relu, name = 'dis_conv2'))
+		self.conv2 = SN(tf.keras.layers.Conv2D(128, 7, 2, activation = tf.nn.leaky_relu, name = 'dis_conv2', kernel_initializer = tf.keras.initializers.Orthogonal))
 		self.flatten = tf.keras.layers.Flatten()
 		self.fc1 = tf.keras.layers.Dense(1, name = 'dis_fc1')
 
@@ -15,7 +15,7 @@ class Discriminator(tf.keras.Model):
 		x = self.conv1(x, test = test)
 		x = self.conv2(x, test = test)
 		x = self.flatten(x)
-		x = self.fc1(x, test = test)
+		x = self.fc1(x)
 		# x = self.fc2(x)
 		return x
 
@@ -38,6 +38,6 @@ class Generator(tf.keras.Model):
 		x = self.deconv1(x, test = test)
 		x = self.deconv2(x, test = test)
 		x = self.deconv3(x, test = test)
-		x = self.deconv4(x, test = test)
+		x = self.deconv4(x)
 		return x
 
